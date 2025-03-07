@@ -75,47 +75,6 @@ main :: proc() {
 	)
 
 
-	texture: u32
-	gl.GenTextures(1, &texture)
-	gl.BindTexture(gl.TEXTURE_2D, texture)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-
-	filename: cstring = "res/textures/grass.png"
-	width, height, nr_chan: i32
-	image.set_flip_vertically_on_load(1)
-	data := image.load(filename, &width, &height, &nr_chan, 0)
-	if data == nil {
-		log.fatalf(
-			"Failed to load texture: %s\n reason: %s\n",
-			filename,
-			image.failure_reason(),
-		)
-		os.exit(-1)
-	}
-	format: i32
-	if nr_chan == 4 {
-		format = gl.RGBA
-	} else {
-		format = gl.RGB
-	}
-	gl.TexImage2D(
-		gl.TEXTURE_2D,
-		0,
-		format,
-		width,
-		height,
-		0,
-		cast(u32)format,
-		gl.UNSIGNED_BYTE,
-		data,
-	)
-	gl.GenerateMipmap(gl.TEXTURE_2D)
-	image.image_free(data)
-
-
 	camera: camera
 	camera_init(
 		&camera,
@@ -133,6 +92,8 @@ main :: proc() {
 	accum: f32 = 0.0
 	dt: f32 = 0.01
 
+	grass: texture = texture_create("res/textures/grass.png")
+
 	sprites: [100]sprite
 	sprite_width: f32 = 50.0
 	for i in 0 ..< 100 {
@@ -144,7 +105,7 @@ main :: proc() {
 			rotation = 0.0,
 			scale    = {sprite_width, sprite_width},
 			color    = {1.0, 1.0, 1.0},
-			texture  = texture,
+			texture  = grass.id,
 		}
 	}
 
