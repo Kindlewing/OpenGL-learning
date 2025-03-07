@@ -7,14 +7,19 @@ import gl "vendor:OpenGL"
 
 camera :: struct {
 	zoom:              f32,
-	shader_program_id: u32,
+	shader:            shader,
 	projection_matrix: linalg.Matrix4f32,
 	aspect_ratio:      f32,
 }
 
-init_camera :: proc(cam: ^camera, shader: u32, zoom: f32 = 1.0, aspect: f32) {
+init_camera :: proc(
+	cam: ^camera,
+	shader: shader,
+	zoom: f32 = 1.0,
+	aspect: f32,
+) {
 	cam.zoom = zoom
-	cam.shader_program_id = shader
+	cam.shader = shader
 	cam.aspect_ratio = aspect
 
 	if cam.aspect_ratio >= 1 {
@@ -37,7 +42,7 @@ init_camera :: proc(cam: ^camera, shader: u32, zoom: f32 = 1.0, aspect: f32) {
 		)
 	}
 
-	proj_loc: i32 = gl.GetUniformLocation(cam.shader_program_id, "proj")
+	proj_loc: i32 = gl.GetUniformLocation(cam.shader.program, "proj")
 	if proj_loc == -1 {
 		log.fatalf("Projection matrix not found in shader")
 		os.exit(-1)

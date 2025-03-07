@@ -8,8 +8,8 @@ import gl "vendor:OpenGL"
 import "vendor:stb/image"
 
 renderer :: struct {
-	shader_program_id: u32,
-	quad_vao:          u32,
+	shader:   shader,
+	quad_vao: u32,
 }
 
 init_renderer :: proc(r: ^renderer) {
@@ -51,7 +51,7 @@ init_renderer :: proc(r: ^renderer) {
 }
 
 draw_sprite :: proc(r: ^renderer, s: sprite) {
-	gl.UseProgram(r.shader_program_id)
+	gl.UseProgram(r.shader.program)
 	model: linalg.Matrix4f32 = linalg.MATRIX4F32_IDENTITY
 
 	model *= linalg.matrix4_translate_f32({s.position.x, s.position.y, 0.0})
@@ -67,13 +67,13 @@ draw_sprite :: proc(r: ^renderer, s: sprite) {
 	)
 	model *= linalg.matrix4_scale_f32({s.scale.x, s.scale.y, 0.0})
 
-	model_loc := gl.GetUniformLocation(r.shader_program_id, "model")
+	model_loc := gl.GetUniformLocation(r.shader.program, "model")
 	gl.UniformMatrix4fv(model_loc, 1, false, raw_data(&model))
-	color_loc := gl.GetUniformLocation(r.shader_program_id, "sprite_color")
+	color_loc := gl.GetUniformLocation(r.shader.program, "sprite_color")
 	gl.Uniform3f(color_loc, s.color.x, s.color.y, s.color.z)
 
 	gl.ActiveTexture(gl.TEXTURE0)
-	texture_loc := gl.GetUniformLocation(r.shader_program_id, "block_texture")
+	texture_loc := gl.GetUniformLocation(r.shader.program, "block_texture")
 	gl.Uniform1i(texture_loc, 0)
 	gl.BindTexture(gl.TEXTURE_2D, s.texture)
 	gl.BindVertexArray(r.quad_vao)

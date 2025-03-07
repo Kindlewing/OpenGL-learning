@@ -59,7 +59,7 @@ resize_callback :: proc "c" (window: glfw.WindowHandle, width, height: i32) {
 			1,
 		)
 	}
-	proj_loc: i32 = gl.GetUniformLocation(cam.shader_program_id, "proj")
+	proj_loc: i32 = gl.GetUniformLocation(cam.shader.program, "proj")
 	if proj_loc == -1 {
 		os.exit(-1)
 	}
@@ -104,32 +104,17 @@ main :: proc() {
 
 
 	glfw.SetFramebufferSizeCallback(window, resize_callback)
-	log.debug("Loading GLAD procs")
+	log.debug("Loading GLAD procs\n")
 	gl.load_up_to(GLFW_MAJOR_VERSION, GLFW_MINOR_VERSION, set_addr_type)
-	log.debug("Set the viewport")
+	log.debug("Set the viewport\n")
 	gl.Viewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
 	//odinfmt: enable
 
-	vertex_shader: u32 = compile_shader("sprite.v.glsl", shader_type.VERTEX)
-	frag_shader: u32 = compile_shader("sprite.f.glsl", shader_type.FRAGMENT)
-
-	// attach shaders
-	shader_program: u32 = gl.CreateProgram()
-	gl.AttachShader(shader_program, vertex_shader)
-	gl.AttachShader(shader_program, frag_shader)
-	gl.LinkProgram(shader_program)
-	gl.UseProgram(shader_program)
-
-	link_status: i32
-	gl.GetProgramiv(shader_program, gl.LINK_STATUS, &link_status)
-	if link_status == 0 {
-		info_log: [1024]u8
-		gl.GetProgramInfoLog(shader_program, 1024, nil, raw_data(&info_log))
-		log.fatalf("Shader program linking failed: %s\n", info_log)
-		os.exit(-1)
-	}
-	log.debug("Shader linking successful\n")
+	shader: shader = shader_create(
+		"res/shaders/sprite.vs",
+		"res/shaders/sprite.fs",
+	)
 
 	texture: u32
 	gl.GenTextures(1, &texture)
@@ -145,7 +130,7 @@ main :: proc() {
 
 	width, height, nr_chan: i32
 	image.set_flip_vertically_on_load(1)
-	data := image.load("assets/grass.png", &width, &height, &nr_chan, 0)
+	data := image.load("res/textures/grass.png", &width, &height, &nr_chan, 0)
 	if data == nil {
 		log.fatal("Failed to load texture: assets/grass.png")
 		log.fatal(image.failure_reason())
@@ -183,12 +168,12 @@ main :: proc() {
 	camera: camera
 	init_camera(
 		&camera,
-		shader_program,
+		shader,
 		aspect = cast(f32)WINDOW_WIDTH / cast(f32)WINDOW_HEIGHT,
 	)
 	renderer: renderer = {
-		quad_vao          = 0,
-		shader_program_id = shader_program,
+		quad_vao = 0,
+		shader   = shader,
 	}
 	init_renderer(&renderer)
 
@@ -204,7 +189,7 @@ main :: proc() {
 		accum += frame_time
 
 		for accum >= dt {
-			update(dt, &shader_program)
+			update(dt, &shader.program)
 			accum -= dt
 		}
 
@@ -222,8 +207,7 @@ main :: proc() {
 
 		glfw.SwapBuffers(window)
 	}
-	gl.DeleteShader(vertex_shader)
-	gl.DeleteShader(frag_shader)
+	shader_delete(&shader)
 	glfw.DestroyWindow(window)
 	glfw.Terminate()
 	log.destroy_console_logger(context.logger)

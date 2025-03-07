@@ -9,52 +9,54 @@ shader_type :: enum {
 	FRAGMENT,
 }
 
-compile_shader :: proc(filepath: string, type: shader_type) -> u32 {
-	ret: u32 = 0
-	switch type {
-	case .VERTEX:
-		ret = gl.CreateShader(gl.VERTEX_SHADER)
-		vertex_shader_src, ok := os.read_entire_file_from_filename(filepath)
-		if !ok {
-			log.fatalf("Err reading file\n")
-		}
-		gl.ShaderSource(ret, 1, cast(^cstring)&vertex_shader_src, nil)
-		log.debugf("About to compile vertex shader defined in: %s\n", filepath)
-		gl.CompileShader(ret)
-		compile_ok: i32
-		info: [1024]u8
-		gl.GetShaderiv(ret, gl.COMPILE_STATUS, &compile_ok)
-		if compile_ok == 0 {
-			gl.GetShaderInfoLog(ret, 1024, nil, raw_data(&info))
-			log.errorf(
-				"ERROR::SHADER::VERTEX::COMPILATION_FAILED\n %s\n",
-				info,
-			)
-		}
-		log.debugf("Compilation of vertex shader successful.\n")
-	case .FRAGMENT:
-		ret = gl.CreateShader(gl.FRAGMENT_SHADER)
-		frag_shader_src, frag_ok := os.read_entire_file_from_filename(filepath)
-		if !frag_ok {
-			log.fatalf("Err reading file\n")
-		}
-		gl.ShaderSource(ret, 1, cast(^cstring)&frag_shader_src, nil)
-		log.debugf(
-			"About to compile fragment shader defined in: %s\n",
-			filepath,
-		)
-		gl.CompileShader(ret)
-		ok: i32
-		info: [1024]u8
-		gl.GetShaderiv(ret, gl.COMPILE_STATUS, &ok)
-		if ok == 0 {
-			gl.GetShaderInfoLog(ret, 1024, nil, raw_data(&info))
-			log.errorf(
-				"ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n %s\n",
-				info,
-			)
-		}
-		log.debugf("Compilation of fragment shader successful.\n")
+shader :: struct {
+	program, vertex_handle, fragment_handle: u32,
+}
+
+shader_create :: proc(vertex_file: string, fragment_file: string) -> shader {
+	shader: shader
+	shader.vertex_handle = shader_compile(vertex_file, gl.VERTEX_SHADER)
+	shader.fragment_handle = shader_compile(fragment_file, gl.FRAGMENT_SHADER)
+
+	shader.program = gl.CreateProgram()
+	gl.AttachShader(shader.program, shader.vertex_handle)
+	gl.AttachShader(shader.program, shader.fragment_handle)
+	gl.LinkProgram(shader.program)
+
+	link_status: i32
+	gl.GetProgramiv(shader.program, gl.LINK_STATUS, &link_status)
+	if link_status == 0 {
+		info_log: [512]u8
+		gl.GetProgramInfoLog(shader.program, 1024, nil, raw_data(&info_log))
+		log.panicf("Shader program linking failed: %s\n", info_log)
 	}
-	return ret
+	return shader
+}
+
+shader_compile :: proc(file: string, type: u32) -> u32 {
+	handle: u32
+
+	shader_src, read_success := os.read_entire_file_from_filename(file)
+	if !read_success {
+		log.fatalf("Could not read file\n")
+		os.exit(-1)
+	}
+	handle = gl.CreateShader(type)
+	gl.ShaderSource(handle, 1, cast(^cstring)&shader_src, nil)
+	log.debugf("About to compile shader: %s\n", file)
+	gl.CompileShader(handle)
+	ok: i32
+	info: [512]u8
+	gl.GetShaderiv(handle, gl.COMPILE_STATUS, &ok)
+	if ok == 0 {
+		gl.GetShaderInfoLog(handle, 512, nil, raw_data(&info))
+		log.panicf("Shader compilation failed:\n reason: %s\n", info)
+	}
+	log.debugf("Shader %s compilation successful\n", file)
+	return handle
+}
+
+shader_delete :: proc(shader: ^shader) {
+	gl.DeleteShader(shader.vertex_handle)
+	gl.DeleteShader(shader.fragment_handle)
 }
