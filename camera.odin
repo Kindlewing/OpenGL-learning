@@ -42,6 +42,7 @@ camera_init :: proc(
 		)
 	}
 
+	gl.UseProgram(cam.shader.program)
 	proj_loc: i32 = gl.GetUniformLocation(cam.shader.program, "proj")
 	if proj_loc == -1 {
 		log.fatalf("Projection matrix not found in shader")

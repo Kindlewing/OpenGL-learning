@@ -48,7 +48,7 @@ main :: proc() {
 		if flags & gl.CONTEXT_FLAG_DEBUG_BIT == 1 {
 			gl.Enable(gl.DEBUG_OUTPUT)
 			gl.Enable(gl.DEBUG_OUTPUT_SYNCHRONOUS)
-			gl.DebugMessageCallback(gl_debug_output, &extern_context)
+			gl.DebugMessageCallback(gl_debug_output, &ctx)
 		}
 	}
 	log.debug("About to create the window")
@@ -62,13 +62,11 @@ main :: proc() {
 	glfw.MakeContextCurrent(window)
 
 
-	glfw.SetFramebufferSizeCallback(window, resize_callback)
 	log.debug("Loading GLAD procs\n")
 	gl.load_up_to(GLFW_MAJOR_VERSION, GLFW_MINOR_VERSION, set_addr_type)
 	log.debug("Set the viewport\n")
 	gl.Viewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
-	//odinfmt: enable
 
 	shader: shader = shader_create(
 		"res/shaders/sprite.vs",
@@ -91,37 +89,29 @@ main :: proc() {
 	image.set_flip_vertically_on_load(1)
 	data := image.load("res/textures/grass.png", &width, &height, &nr_chan, 0)
 	if data == nil {
-		log.fatal("Failed to load texture: assets/grass.png")
+		log.fatal("Failed to load texture: res/textures/grass.png")
 		log.fatal(image.failure_reason())
 		os.exit(-1)
 	}
-	fmt: i32
+	format: i32
 	if nr_chan == 4 {
-		fmt = gl.RGBA
+		format = gl.RGBA
 	} else {
-		fmt = gl.RGB
+		format = gl.RGB
 	}
 	gl.TexImage2D(
 		gl.TEXTURE_2D,
 		0,
-		fmt,
+		format,
 		width,
 		height,
 		0,
-		cast(u32)fmt,
+		cast(u32)format,
 		gl.UNSIGNED_BYTE,
 		data,
 	)
 	gl.GenerateMipmap(gl.TEXTURE_2D)
 	image.image_free(data)
-
-	sprite := sprite {
-		position = {0.0, 0.0},
-		rotation = 0.0,
-		scale    = {200.0, 200.0},
-		color    = {1.0, 1.0, 1.0},
-		texture  = texture,
-	}
 
 
 	camera: camera
@@ -130,10 +120,32 @@ main :: proc() {
 		shader,
 		aspect = cast(f32)WINDOW_WIDTH / cast(f32)WINDOW_HEIGHT,
 	)
+	glfw.SetFramebufferSizeCallback(window, resize_callback)
 	renderer: renderer
 	renderer_init(&renderer, shader)
 
 	glfw.SetWindowUserPointer(window, &camera)
+
+	sprites: [dynamic]sprite
+	sprite_width: f32 = 100.0
+	for i := 0; i < WINDOW_WIDTH; i += 1 {
+		append(
+			&sprites,
+			sprite {
+				position = {
+					-WINDOW_WIDTH +
+					(sprite_width / 2.0) +
+					sprite_width * cast(f32)i,
+					0.0,
+				},
+				rotation = 0.0,
+				scale = {100.0, 100.0},
+				color = {1.0, 1.0, 1.0},
+				texture = texture,
+			},
+		)
+	}
+
 
 	last_frame_time: f32 = cast(f32)glfw.GetTime()
 	accum: f32 = 0.0
@@ -161,7 +173,9 @@ main :: proc() {
 		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 
 		// TODO: Actually render
-		draw_sprite(&renderer, s)
+		for i := 0; i < len(sprites); i += 1 {
+			draw_sprite(&renderer, sprites[i])
+		}
 
 		glfw.SwapBuffers(window)
 	}
