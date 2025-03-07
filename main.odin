@@ -144,13 +144,14 @@ main :: proc() {
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 
 	width, height, nr_chan: i32
+	image.set_flip_vertically_on_load(1)
 	data := image.load("assets/grass.png", &width, &height, &nr_chan, 0)
 	if data == nil {
 		log.fatal("Failed to load texture: assets/grass.png")
 		log.fatal(image.failure_reason())
 		os.exit(-1)
 	}
-	fmt: u32
+	fmt: i32
 	if nr_chan == 4 {
 		fmt = gl.RGBA
 	} else {
@@ -159,11 +160,11 @@ main :: proc() {
 	gl.TexImage2D(
 		gl.TEXTURE_2D,
 		0,
-		gl.RGB,
+		fmt,
 		width,
 		height,
 		0,
-		gl.RGB,
+		cast(u32)fmt,
 		gl.UNSIGNED_BYTE,
 		data,
 	)
@@ -173,7 +174,7 @@ main :: proc() {
 	s := sprite {
 		position = {0.0, 0.0},
 		rotation = 0.0,
-		scale    = {100.0, 100.0},
+		scale    = {200.0, 200.0},
 		color    = {1.0, 1.0, 1.0},
 		texture  = texture,
 	}
