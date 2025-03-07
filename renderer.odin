@@ -12,8 +12,9 @@ renderer :: struct {
 	quad_vao: u32,
 }
 
-init_renderer :: proc(r: ^renderer) {
+renderer_init :: proc(r: ^renderer, shader: shader) {
 	// odinfmt: disable
+	r.shader = shader
 	vbo: u32 = 0
 	vertices: [24]f32 = {
 		//pos       //tex

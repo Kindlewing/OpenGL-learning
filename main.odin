@@ -25,46 +25,9 @@ sprite :: struct {
 	texture:  u32,
 }
 
-set_addr_type :: proc(p: rawptr, name: cstring) {
-	(^rawptr)(p)^ = glfw.GetProcAddress(name)
-}
-
-resize_callback :: proc "c" (window: glfw.WindowHandle, width, height: i32) {
-	gl.Viewport(0, 0, width, height)
-	w := cast(f32)width
-	h := cast(f32)height
-	cam := cast(^camera)glfw.GetWindowUserPointer(window)
-	cam.aspect_ratio = w / h
-
-	if cam.aspect_ratio >= 1 {
-		cam.projection_matrix = linalg.matrix_ortho3d_f32(
-			-w / cam.aspect_ratio,
-			w / cam.aspect_ratio,
-			-h,
-			h,
-			0,
-			1,
-		)
-	} else {
-		cam.projection_matrix = linalg.matrix_ortho3d_f32(
-			-w,
-			w,
-			-h / cam.aspect_ratio,
-			h / cam.aspect_ratio,
-			0,
-			1,
-		)
-	}
-	proj_loc: i32 = gl.GetUniformLocation(cam.shader.program, "proj")
-	if proj_loc == -1 {
-		os.exit(-1)
-	}
-	gl.UniformMatrix4fv(proj_loc, 1, false, raw_data(&cam.projection_matrix))
-}
-
 main :: proc() {
 	context.logger = log.create_console_logger()
-	extern_context := runtime.Context {
+	ctx := runtime.Context {
 		logger = context.logger,
 	}
 
@@ -152,7 +115,7 @@ main :: proc() {
 	gl.GenerateMipmap(gl.TEXTURE_2D)
 	image.image_free(data)
 
-	s := sprite {
+	sprite := sprite {
 		position = {0.0, 0.0},
 		rotation = 0.0,
 		scale    = {200.0, 200.0},
@@ -162,16 +125,13 @@ main :: proc() {
 
 
 	camera: camera
-	init_camera(
+	camera_init(
 		&camera,
 		shader,
 		aspect = cast(f32)WINDOW_WIDTH / cast(f32)WINDOW_HEIGHT,
 	)
-	renderer: renderer = {
-		quad_vao = 0,
-		shader   = shader,
-	}
-	init_renderer(&renderer)
+	renderer: renderer
+	renderer_init(&renderer, shader)
 
 	glfw.SetWindowUserPointer(window, &camera)
 

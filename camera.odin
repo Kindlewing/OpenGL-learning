@@ -12,7 +12,7 @@ camera :: struct {
 	aspect_ratio:      f32,
 }
 
-init_camera :: proc(
+camera_init :: proc(
 	cam: ^camera,
 	shader: shader,
 	zoom: f32 = 1.0,
