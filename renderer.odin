@@ -15,7 +15,6 @@ renderer :: struct {
 init_renderer :: proc(r: ^renderer) {
 	// odinfmt: disable
 	vbo: u32 = 0
-
 	vertices: [24]f32 = {
 		//pos       //tex
 		0.0, 1.0, 0.0, 1.0,
