@@ -83,7 +83,7 @@ main :: proc() {
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
-	filename: cstring = "res/textures/wood.png"
+	filename: cstring = "res/textures/grass.png"
 	width, height, nr_chan: i32
 	image.set_flip_vertically_on_load(1)
 	data := image.load(filename, &width, &height, &nr_chan, 0)
@@ -132,6 +132,23 @@ main :: proc() {
 	last_frame_time: f32 = cast(f32)glfw.GetTime()
 	accum: f32 = 0.0
 	dt: f32 = 0.01
+
+	sprites: [100]sprite
+	sprite_width: f32 = 50.0
+	for i in 0 ..< 100 {
+		sprites[i] = sprite {
+			position = {
+				-WINDOW_WIDTH + sprite_width * cast(f32)i,
+				-WINDOW_HEIGHT,
+			},
+			rotation = 0.0,
+			scale    = {sprite_width, sprite_width},
+			color    = {1.0, 1.0, 1.0},
+			texture  = texture,
+		}
+	}
+
+
 	for !glfw.WindowShouldClose(window) {
 		current_frame_time: f32 = cast(f32)glfw.GetTime()
 		frame_time: f32 = current_frame_time - last_frame_time
@@ -150,31 +167,13 @@ main :: proc() {
 			glfw.SetWindowShouldClose(window, true)
 		}
 
-
 		gl.Clear(gl.COLOR_BUFFER_BIT)
-		gl.ClearColor(0.3, 0.2, 0.4, 1.0)
+		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 
 		// TODO: Actually render
-		draw_sprite(
-			&renderer,
-			sprite {
-				position = {0.0, 0.0},
-				scale = {200.0, 200.0},
-				rotation = 0.0,
-				color = {0.3, 0.5, 1.0},
-				texture = texture,
-			},
-		)
-		draw_sprite(
-			&renderer,
-			sprite {
-				position = {200.0, 0.0},
-				scale = {200.0, 200.0},
-				rotation = 0.0,
-				color = {0.3, 0.5, 1.0},
-				texture = texture,
-			},
-		)
+		for i := 0; i < len(sprites); i += 1 {
+			draw_sprite(&renderer, sprites[i])
+		}
 
 		glfw.SwapBuffers(window)
 	}
