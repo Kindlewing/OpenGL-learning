@@ -25,10 +25,6 @@ sprite :: struct {
 	texture:  u32,
 }
 
-update :: proc(dt: f32, shader_program: ^u32) {
-
-}
-
 set_addr_type :: proc(p: rawptr, name: cstring) {
 	(^rawptr)(p)^ = glfw.GetProcAddress(name)
 }
@@ -189,7 +185,7 @@ main :: proc() {
 		accum += frame_time
 
 		for accum >= dt {
-			update(dt, &shader.program)
+			// TODO: update
 			accum -= dt
 		}
 
@@ -200,9 +196,11 @@ main :: proc() {
 			glfw.SetWindowShouldClose(window, true)
 		}
 
+
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 
+		// TODO: Actually render
 		draw_sprite(&renderer, s)
 
 		glfw.SwapBuffers(window)
