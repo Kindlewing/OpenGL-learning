@@ -18,7 +18,6 @@ texture_create :: proc(filename: cstring) -> texture {
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
-	filename: cstring = "res/textures/grass.png"
 	width, height, nr_chan: i32
 	image.set_flip_vertically_on_load(1)
 	data := image.load(filename, &width, &height, &nr_chan, 0)

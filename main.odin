@@ -19,20 +19,6 @@ GLFW_MINOR_VERSION :: 3
 WINDOW_WIDTH :: 1000
 WINDOW_HEIGHT :: 800
 
-sprite :: struct {
-	position: linalg.Vector2f32,
-	scale:    linalg.Vector2f32,
-	color:    linalg.Vector3f32,
-	rotation: f32,
-	texture:  u32,
-}
-
-update :: proc(delta_time: f32, sprites: [dynamic]sprite) {
-	for i := 0; i < len(sprites); i += 1 {
-		sprites[i].position += {0.0, -250.0 * delta_time}
-	}
-}
-
 main :: proc() {
 	context.logger = log.create_console_logger()
 	ctx := runtime.Context {
@@ -77,10 +63,9 @@ main :: proc() {
 
 
 	shader: shader = shader_create(
-		"res/shaders/sprite.vs",
-		"res/shaders/sprite.fs",
+		"res/shaders/pixel.vs",
+		"res/shaders/pixel.fs",
 	)
-
 
 	camera: camera
 	camera_init(
@@ -99,20 +84,20 @@ main :: proc() {
 	accum: f32 = 0.0
 	dt: f32 = 0.01
 
-	grass: texture = texture_create("res/textures/grass.png")
 
-	sprites: [dynamic]sprite
-
-
+	state_init()
 	for !glfw.WindowShouldClose(window) {
 		current_frame_time: f32 = cast(f32)glfw.GetTime()
 		frame_time: f32 = current_frame_time - last_frame_time
+		if frame_time > 0.25 {
+			frame_time = 0.25
+		}
 		last_frame_time = current_frame_time
 		accum += frame_time
 
 		for accum >= dt {
 			// TODO: update
-			update(dt, sprites)
+			simulation_update(dt)
 			accum -= dt
 		}
 
@@ -123,28 +108,11 @@ main :: proc() {
 			glfw.SetWindowShouldClose(window, true)
 		}
 
-		if glfw.GetKey(window, glfw.KEY_SPACE) == glfw.PRESS {
-			if glfw.GetKey(window, glfw.KEY_SPACE) == glfw.RELEASE {
-				append(
-					&sprites,
-					sprite {
-						position = {0.0, WINDOW_HEIGHT - 50},
-						rotation = 0.0,
-						texture = grass.id,
-						scale = {100.0, 100.0},
-						color = {1.0, 1.0, 1.0},
-					},
-				)
-			}
-		}
-
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 
 		// TODO: Actually render
-		for i := 0; i < len(sprites); i += 1 {
-			draw_sprite(&renderer, sprites[i])
-		}
+		render(&renderer)
 
 		glfw.SwapBuffers(window)
 	}
