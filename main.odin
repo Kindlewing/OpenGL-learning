@@ -6,6 +6,7 @@ import "core:image/png"
 import "core:log"
 import "core:math"
 import "core:math/linalg"
+import "core:math/rand"
 import "core:os"
 import "core:strings"
 import gl "vendor:OpenGL"
@@ -20,10 +21,16 @@ WINDOW_HEIGHT :: 800
 
 sprite :: struct {
 	position: linalg.Vector2f32,
-	rotation: f32,
 	scale:    linalg.Vector2f32,
 	color:    linalg.Vector3f32,
+	rotation: f32,
 	texture:  u32,
+}
+
+update :: proc(delta_time: f32, sprites: [dynamic]sprite) {
+	for i := 0; i < len(sprites); i += 1 {
+		sprites[i].position += {0.0, -250.0 * delta_time}
+	}
 }
 
 main :: proc() {
@@ -94,20 +101,7 @@ main :: proc() {
 
 	grass: texture = texture_create("res/textures/grass.png")
 
-	sprites: [100]sprite
-	sprite_width: f32 = 50.0
-	for i in 0 ..< 100 {
-		sprites[i] = sprite {
-			position = {
-				-WINDOW_WIDTH + sprite_width * cast(f32)i,
-				-WINDOW_HEIGHT,
-			},
-			rotation = 0.0,
-			scale    = {sprite_width, sprite_width},
-			color    = {1.0, 1.0, 1.0},
-			texture  = grass.id,
-		}
-	}
+	sprites: [dynamic]sprite
 
 
 	for !glfw.WindowShouldClose(window) {
@@ -118,6 +112,7 @@ main :: proc() {
 
 		for accum >= dt {
 			// TODO: update
+			update(dt, sprites)
 			accum -= dt
 		}
 
@@ -126,6 +121,21 @@ main :: proc() {
 
 		if glfw.GetKey(window, glfw.KEY_ESCAPE) == glfw.PRESS {
 			glfw.SetWindowShouldClose(window, true)
+		}
+
+		if glfw.GetKey(window, glfw.KEY_SPACE) == glfw.PRESS {
+			if glfw.GetKey(window, glfw.KEY_SPACE) == glfw.RELEASE {
+				append(
+					&sprites,
+					sprite {
+						position = {0.0, WINDOW_HEIGHT - 50},
+						rotation = 0.0,
+						texture = grass.id,
+						scale = {100.0, 100.0},
+						color = {1.0, 1.0, 1.0},
+					},
+				)
+			}
 		}
 
 		gl.Clear(gl.COLOR_BUFFER_BIT)
