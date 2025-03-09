@@ -3,7 +3,7 @@ import "core:math/linalg"
 import "core:math/rand"
 import "core:time"
 
-MAX_PIXELS :: 10
+MAX_PIXELS :: 100
 
 pixel :: struct {
 	position: linalg.Vector2f32,
@@ -27,7 +27,7 @@ state_init :: proc() {
 	gen := rand.create(u64(time.tick_now()._nsec))
 	for i := 0; i < MAX_PIXELS; i += 1 {
 		pixel: pixel
-		pixel.size = 80.0
+		pixel.size = 8.0
 		pos_x := rand.float32_range(
 			-WINDOW_WIDTH + pixel.size,
 			WINDOW_WIDTH - pixel.size,
@@ -46,6 +46,6 @@ state_init :: proc() {
 
 simulation_update :: proc(delta_time: f32) {
 	for i := 0; i < MAX_PIXELS; i += 1 {
-		global_state.pixels[i].position.y += -10.0 * delta_time
+		global_state.pixels[i].position.y += 10.0 * delta_time
 	}
 }

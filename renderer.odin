@@ -52,7 +52,6 @@ renderer_init :: proc(r: ^renderer, shader: shader) {
 	)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindVertexArray(0)
-	gl.UseProgram(r.shader.program)
 }
 
 render_prepare :: proc(r: ^renderer) {
@@ -77,26 +76,24 @@ render_prepare :: proc(r: ^renderer) {
 }
 
 render :: proc(r: ^renderer) {
-	render_prepare(r)
+	gl.UseProgram(r.shader.program)
+	color_loc := gl.GetUniformLocation(r.shader.program, "sprite_color")
+	model_loc := gl.GetUniformLocation(r.shader.program, "model")
+	texture_loc := gl.GetUniformLocation(r.shader.program, "pixel_texture")
 	for i := 0; i < MAX_PIXELS; i += 1 {
-
-		model_loc := gl.GetUniformLocation(r.shader.program, "instance_matrix")
 		gl.UniformMatrix4fv(
 			model_loc,
 			1,
 			false,
 			raw_data(&r.model_matrices[i]),
 		)
-		color_loc := gl.GetUniformLocation(r.shader.program, "sprite_color")
 		gl.Uniform3f(
 			color_loc,
 			global_state.pixels[i].color.x,
 			global_state.pixels[i].color.y,
 			global_state.pixels[i].color.z,
 		)
-
 		gl.ActiveTexture(gl.TEXTURE0)
-		texture_loc := gl.GetUniformLocation(r.shader.program, "pixel_texture")
 		gl.Uniform1i(texture_loc, 0)
 		gl.BindTexture(gl.TEXTURE_2D, global_state.pixels[i].texture.id)
 		gl.BindVertexArray(r.quad_vao)

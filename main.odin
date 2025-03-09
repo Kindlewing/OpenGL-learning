@@ -108,10 +108,13 @@ main :: proc() {
 			glfw.SetWindowShouldClose(window, true)
 		}
 
+		alpha: f32 = accum / dt
+
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 
 		// TODO: Actually render
+		render_prepare(&renderer)
 		render(&renderer)
 
 		glfw.SwapBuffers(window)
