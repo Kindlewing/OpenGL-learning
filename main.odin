@@ -20,24 +20,7 @@ GLFW_MINOR_VERSION :: 3
 WINDOW_WIDTH :: 1000
 WINDOW_HEIGHT :: 800
 
-MAX_PIXELS :: 1000
-
-pixel :: struct {
-	x, y:     f32,
-	size:     f32,
-	velocity: linalg.Vector2f32,
-	color:    linalg.Vector3f32,
-	type:     pixel_type,
-	texture:  texture,
-}
-
-state :: struct {
-	px: [MAX_PIXELS]pixel,
-}
-
-pixel_type :: enum {
-	SAND,
-}
+MAX_PIXELS :: 5
 
 main :: proc() {
 	when ODIN_DEBUG {
@@ -172,6 +155,7 @@ main :: proc() {
 		glfw.SwapBuffers(window)
 		frame_count += 1
 	}
+	renderer_destroy(&renderer)
 	shader_delete(&shader)
 	glfw.DestroyWindow(window)
 	glfw.Terminate()
