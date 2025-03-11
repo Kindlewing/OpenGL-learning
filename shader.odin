@@ -41,6 +41,7 @@ shader_compile :: proc(file: string, type: u32) -> u32 {
 		log.fatalf("Could not read file\n")
 		os.exit(-1)
 	}
+	defer delete_slice(shader_src)
 	handle = gl.CreateShader(type)
 	gl.ShaderSource(handle, 1, cast(^cstring)&shader_src, nil)
 	log.debugf("About to compile shader: %s\n", file)

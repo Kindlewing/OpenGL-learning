@@ -1,51 +1,46 @@
 package main
 import "core:math/linalg"
 import "core:math/rand"
-import "core:time"
+import t "core:time"
 
-MAX_PIXELS :: 100
 
-pixel :: struct {
-	position: linalg.Vector2f32,
-	size:     f32,
-	color:    linalg.Vector3f32,
-	type:     pixel_type,
-	texture:  texture,
-}
-
-state :: struct {
-	pixels: [MAX_PIXELS]pixel,
-}
-
-pixel_type :: enum {
-	SAND,
-}
-global_state: state
-
-state_init :: proc() {
+state_init :: proc(state: ^state) {
 	sand: texture = texture_create("res/textures/sand.png")
-	gen := rand.create(u64(time.tick_now()._nsec))
 	for i := 0; i < MAX_PIXELS; i += 1 {
 		pixel: pixel
 		pixel.size = 8.0
-		pos_x := rand.float32_range(
-			-WINDOW_WIDTH + pixel.size,
-			WINDOW_WIDTH - pixel.size,
-		)
-		pos_y := rand.float32_range(
-			-WINDOW_HEIGHT + pixel.size,
-			WINDOW_HEIGHT - pixel.size,
-		)
-		pixel.position = {pos_x, pos_y}
+		pixel.x = rand.float32_range(-WINDOW_WIDTH, WINDOW_WIDTH)
+		pixel.y = rand.float32_range(-WINDOW_HEIGHT, WINDOW_HEIGHT)
 		pixel.type = .SAND
 		pixel.color = {1.0, 1.0, 1.0}
+		pixel.velocity = {
+			rand.float32_range(-0.5, 0.5),
+			rand.float32_range(-0.5, 0.5),
+		}
 		pixel.texture = sand
-		global_state.pixels[i] = pixel
+		state.px[i] = pixel
 	}
 }
 
-simulation_update :: proc(delta_time: f32) {
+simulation_update :: proc(delta_time: f32, state: ^state) {
+	speed: f32 = 800.0
+	half_w: f32 = state.px[0].size / 2
 	for i := 0; i < MAX_PIXELS; i += 1 {
-		global_state.pixels[i].position.y += 10.0 * delta_time
+		state.px[i].x += state.px[i].velocity.x * speed * delta_time
+		state.px[i].y += state.px[i].velocity.y * speed * delta_time
+
+		// Check for collisions with other px
+		for j := 0; j < MAX_PIXELS; j += 1 {
+			if i == j {
+				continue
+			}
+			if state.px[i].x - half_w < state.px[j].x + half_w &&
+			   state.px[i].x + half_w > state.px[j].x - half_w &&
+			   state.px[i].y - half_w < state.px[j].y + half_w &&
+			   state.px[i].y + half_w > state.px[j].y - half_w {
+				state.px[i].velocity = -state.px[i].velocity
+				state.px[j].velocity = -state.px[j].velocity
+			}
+		}
 	}
 }

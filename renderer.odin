@@ -8,16 +8,13 @@ import gl "vendor:OpenGL"
 import "vendor:stb/image"
 
 renderer :: struct {
-	shader:         shader,
-	model_matrices: [dynamic]linalg.Matrix4f32,
-	quad_vao:       u32,
+	shader:   shader,
+	quad_vao: u32,
 }
 
 renderer_init :: proc(r: ^renderer, shader: shader) {
 	// odinfmt: disable
 	r.shader = shader
-	r.model_matrices = make_dynamic_array_len_cap([dynamic]linalg.Matrix4f32, 
-		MAX_PIXELS, MAX_PIXELS)
 	vbo: u32 = 0
 	vertices: [24]f32 = {
 		//pos       //tex
@@ -54,48 +51,43 @@ renderer_init :: proc(r: ^renderer, shader: shader) {
 	gl.BindVertexArray(0)
 }
 
-render_prepare :: proc(r: ^renderer) {
-	for px in global_state.pixels {
+render_prepare :: proc(r: ^renderer, state: ^state) {
+	gl.UseProgram(r.shader.program)
+}
+
+render :: proc(r: ^renderer, state: ^state) {
+	gl.UseProgram(r.shader.program)
+	for i := 0; i < MAX_PIXELS; i += 1 {
+		color_loc := gl.GetUniformLocation(r.shader.program, "sprite_color")
+		texture_loc := gl.GetUniformLocation(r.shader.program, "pixel_texture")
+		gl.Uniform3f(
+			color_loc,
+			state.px[i].color.x,
+			state.px[i].color.y,
+			state.px[i].color.z,
+		)
 		model: linalg.Matrix4f32 = linalg.MATRIX4F32_IDENTITY
 		model *= linalg.matrix4_translate_f32(
-			{px.position.x, px.position.y, 0.0},
+			{state.px[i].x, state.px[i].y, 0.0},
 		)
 		model *= linalg.matrix4_translate_f32(
-			{0.5 * px.size, 0.5 * px.size, 0.0},
+			{0.5 * state.px[i].size, 0.5 * state.px[i].size, 0.0},
 		)
 		model *= linalg.matrix4_rotate_f32(
 			math.to_radians_f32(0.0),
 			{0.0, 0.0, 1.0},
 		)
 		model *= linalg.matrix4_translate_f32(
-			{-0.5 * px.size, -0.5 * px.size, 0.0},
+			{-0.5 * state.px[i].size, -0.5 * state.px[i].size, 0.0},
 		)
-		model *= linalg.matrix4_scale_f32({px.size, px.size, 0.0})
-		append(&r.model_matrices, model)
-	}
-}
-
-render :: proc(r: ^renderer) {
-	gl.UseProgram(r.shader.program)
-	color_loc := gl.GetUniformLocation(r.shader.program, "sprite_color")
-	model_loc := gl.GetUniformLocation(r.shader.program, "model")
-	texture_loc := gl.GetUniformLocation(r.shader.program, "pixel_texture")
-	for i := 0; i < MAX_PIXELS; i += 1 {
-		gl.UniformMatrix4fv(
-			model_loc,
-			1,
-			false,
-			raw_data(&r.model_matrices[i]),
+		model *= linalg.matrix4_scale_f32(
+			{state.px[i].size, state.px[i].size, 0.0},
 		)
-		gl.Uniform3f(
-			color_loc,
-			global_state.pixels[i].color.x,
-			global_state.pixels[i].color.y,
-			global_state.pixels[i].color.z,
-		)
+		model_loc := gl.GetUniformLocation(r.shader.program, "model")
+		gl.UniformMatrix4fv(model_loc, 1, false, raw_data(&model))
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.Uniform1i(texture_loc, 0)
-		gl.BindTexture(gl.TEXTURE_2D, global_state.pixels[i].texture.id)
+		gl.BindTexture(gl.TEXTURE_2D, state.px[i].texture.id)
 		gl.BindVertexArray(r.quad_vao)
 		gl.DrawArrays(gl.TRIANGLES, 0, 6)
 		gl.BindVertexArray(0)
