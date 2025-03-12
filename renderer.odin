@@ -75,7 +75,6 @@ renderer_init :: proc(r: ^renderer, cam: ^camera) {
 	}
 }
 
-
 render :: proc(r: ^renderer, state: ^state) {
 	proj_loc, resolution_loc, color_loc, model_loc, texture_loc: i32
 	switch r.mode {

@@ -102,9 +102,7 @@ main :: proc() {
 	)
 	glfw.SetFramebufferSizeCallback(window, resize_callback)
 	renderer: renderer
-	fmt.println("About to init renderer")
 	renderer_init(&renderer, &camera)
-	fmt.println("init renderer success")
 
 	glfw.SetWindowUserPointer(window, &camera)
 
