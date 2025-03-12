@@ -9,7 +9,6 @@ uniform vec3 iResolution;
 
 void main() {
     color.a = 1.0;
-    vec3 circle_color = sprite_color;
     vec2 uv = gl_FragCoord.xy / iResolution.xy;
     float aspect = iResolution.x / iResolution.y;
     uv.x *= aspect;
@@ -20,5 +19,5 @@ void main() {
     if (cir == 0.0) {
         discard;
     }
-    color.rgb *= circle_color;
+    color.rgb *= sprite_color;
 }
