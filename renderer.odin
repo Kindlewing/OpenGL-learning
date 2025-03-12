@@ -95,7 +95,6 @@ render :: proc(r: ^renderer, state: ^state) {
 		gl.Uniform3f(resolution_loc, WINDOW_WIDTH, WINDOW_HEIGHT, 0.0)
 	}
 	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, state.px[0].texture.id)
 	for i := 0; i < MAX_PIXELS; i += 1 {
 		gl.Uniform3f(
 			color_loc,
@@ -124,6 +123,7 @@ render :: proc(r: ^renderer, state: ^state) {
 			gl.Uniform3f(resolution_loc, WINDOW_WIDTH, WINDOW_HEIGHT, 0.0)
 		}
 		gl.UniformMatrix4fv(model_loc, 1, false, raw_data(&model))
+		gl.BindTexture(gl.TEXTURE_2D, state.px[i].texture.id)
 		gl.Uniform1i(texture_loc, 0)
 		// don't need to rebind
 		gl.DrawArrays(gl.TRIANGLES, 0, 6)

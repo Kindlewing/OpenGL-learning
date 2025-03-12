@@ -9,7 +9,5 @@ uniform mat4 proj;
 uniform mat4 model;
 
 void main() {
-    sprite_color =
-        pos = vec4(vertex.xy, 0.0, 1.0);
     gl_Position = proj * model * vec4(vertex.xy, 0.0, 1.0);
 }
