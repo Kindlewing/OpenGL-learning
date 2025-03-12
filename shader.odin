@@ -60,4 +60,5 @@ shader_compile :: proc(file: string, type: u32) -> u32 {
 shader_delete :: proc(shader: ^shader) {
 	gl.DeleteShader(shader.vertex_handle)
 	gl.DeleteShader(shader.fragment_handle)
+	gl.DeleteProgram(shader.program)
 }

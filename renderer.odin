@@ -58,11 +58,26 @@ renderer_init :: proc(r: ^renderer, cam: ^camera) {
 		4 * size_of(f32),
 		cast(uintptr)0,
 	)
+
+	for key in r.shaders {
+		gl.UseProgram(r.shaders[key].program)
+		proj_loc: i32 = gl.GetUniformLocation(r.shaders[key].program, "proj")
+		if proj_loc == -1 {
+			log.fatalf("Projection matrix not found in shader")
+			os.exit(-1)
+		}
+		gl.UniformMatrix4fv(
+			proj_loc,
+			1,
+			false,
+			raw_data(&cam.projection_matrix),
+		)
+	}
 }
 
 
 render :: proc(r: ^renderer, state: ^state) {
-	uv_loc, color_loc, model_loc, texture_loc: i32
+	proj_loc, resolution_loc, color_loc, model_loc, texture_loc: i32
 	switch r.mode {
 	case .QUAD:
 		sh := r.shaders["QUAD"]
@@ -73,15 +88,14 @@ render :: proc(r: ^renderer, state: ^state) {
 	case .CIRCLE:
 		sh := r.shaders["CIRCLE"]
 		gl.UseProgram(sh.program)
-		uv_loc = gl.GetUniformLocation(sh.program, "iResolution")
+		resolution_loc = gl.GetUniformLocation(sh.program, "iResolution")
 		color_loc = gl.GetUniformLocation(sh.program, "sprite_color")
 		texture_loc = gl.GetUniformLocation(sh.program, "pixel_texture")
 		model_loc = gl.GetUniformLocation(sh.program, "model")
-		gl.Uniform3f(uv_loc, WINDOW_WIDTH, WINDOW_HEIGHT, 0.0)
+		gl.Uniform3f(resolution_loc, WINDOW_WIDTH, WINDOW_HEIGHT, 0.0)
 	}
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, state.px[0].texture.id)
-
 	for i := 0; i < MAX_PIXELS; i += 1 {
 		gl.Uniform3f(
 			color_loc,
@@ -107,7 +121,7 @@ render :: proc(r: ^renderer, state: ^state) {
 			{state.px[i].size, state.px[i].size, 0.0},
 		)
 		if r.mode == .CIRCLE {
-			gl.Uniform3f(uv_loc, WINDOW_WIDTH, WINDOW_HEIGHT, 0.0)
+			gl.Uniform3f(resolution_loc, WINDOW_WIDTH, WINDOW_HEIGHT, 0.0)
 		}
 		gl.UniformMatrix4fv(model_loc, 1, false, raw_data(&model))
 		gl.Uniform1i(texture_loc, 0)
@@ -117,7 +131,10 @@ render :: proc(r: ^renderer, state: ^state) {
 }
 
 renderer_destroy :: proc(r: ^renderer) {
-	assert(1 == 0, "I FORGOT TO DELETE SHADERS")
+	for key in r.shaders {
+		shader_delete(&r.shaders[key])
+	}
+	delete_map(r.shaders)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindVertexArray(0)
 }
