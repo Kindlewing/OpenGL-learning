@@ -12,14 +12,8 @@ camera :: struct {
 	aspect_ratio:      f32,
 }
 
-camera_init :: proc(
-	cam: ^camera,
-	shader: shader,
-	zoom: f32 = 1.0,
-	aspect: f32,
-) {
+camera_init :: proc(cam: ^camera, zoom: f32 = 1.0, aspect: f32) {
 	cam.zoom = zoom
-	cam.shader = shader
 	cam.aspect_ratio = aspect
 
 	if cam.aspect_ratio >= 1 {
@@ -41,12 +35,4 @@ camera_init :: proc(
 			1,
 		)
 	}
-
-	gl.UseProgram(cam.shader.program)
-	proj_loc: i32 = gl.GetUniformLocation(cam.shader.program, "proj")
-	if proj_loc == -1 {
-		log.fatalf("Projection matrix not found in shader")
-		os.exit(-1)
-	}
-	gl.UniformMatrix4fv(proj_loc, 1, false, raw_data(&cam.projection_matrix))
 }

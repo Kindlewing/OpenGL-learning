@@ -37,9 +37,4 @@ resize_callback :: proc "c" (window: glfw.WindowHandle, width, height: i32) {
 			1,
 		)
 	}
-	proj_loc: i32 = gl.GetUniformLocation(cam.shader.program, "proj")
-	if proj_loc == -1 {
-		os.exit(-1)
-	}
-	gl.UniformMatrix4fv(proj_loc, 1, false, raw_data(&cam.projection_matrix))
 }

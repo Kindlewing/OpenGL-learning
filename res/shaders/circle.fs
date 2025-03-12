@@ -1,13 +1,24 @@
 #version 450 core
-in vec2 uv
-
 out vec4 color;
 
-float fade = 0.005;
-float distance = 1.0 - length(uv);
-vec3 col = vec3(smoothstep(0.0, fade, distance));
+in vec4 pos;
+
+uniform vec3 sprite_color;
+uniform sampler2D pixel_texture;
+uniform vec3 iResolution;
 
 void main() {
-    color = col;
-    uv = gl_FragCoord / iResolution.xy;
+    color.a = 1.0;
+    vec3 circle_color = sprite_color;
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+    float aspect = iResolution.x / iResolution.y;
+    uv.x *= aspect;
+
+    float fade = 0.005;
+    float distance = length(uv);
+    float cir = smoothstep(0.0, fade, distance);
+    if (cir == 0.0) {
+        discard;
+    }
+    color.rgb *= circle_color;
 }
