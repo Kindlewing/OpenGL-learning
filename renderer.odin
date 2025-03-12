@@ -11,11 +11,18 @@ renderer :: struct {
 	shader:   shader,
 	quad_vao: u32,
 	quad_vbo: u32,
+	mode:     render_mode,
 }
 
-renderer_init :: proc(r: ^renderer, shader: shader) {
+render_mode :: enum {
+	QUAD,
+	CIRCLE,
+}
+
+renderer_init :: proc(r: ^renderer, shader: shader, mode: render_mode) {
 	// odinfmt: disable
 	r.shader = shader
+	r.mode = mode
 	vertices: [24]f32 = {
 		//pos       //tex
 		0.0, 1.0, 0.0, 1.0,
@@ -59,6 +66,11 @@ render :: proc(r: ^renderer, state: ^state) {
 	texture_loc := gl.GetUniformLocation(r.shader.program, "pixel_texture")
 	model_loc := gl.GetUniformLocation(r.shader.program, "model")
 
+	resolution_loc: i32
+	if r.mode == .CIRCLE {
+		resolution_loc = gl.GetUniformLocation(r.shader.program, "uv")
+	}
+
 	for i := 0; i < MAX_PIXELS; i += 1 {
 		gl.Uniform3f(
 			color_loc,
@@ -83,6 +95,9 @@ render :: proc(r: ^renderer, state: ^state) {
 		model *= linalg.matrix4_scale_f32(
 			{state.px[i].size, state.px[i].size, 0.0},
 		)
+		if r.mode == .CIRCLE {
+			gl.Uniform2f(resolution_loc, WINDOW_WIDTH, WINDOW_HEIGHT)
+		}
 		gl.UniformMatrix4fv(model_loc, 1, false, raw_data(&model))
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.Uniform1i(texture_loc, 0)

@@ -95,20 +95,27 @@ main :: proc() {
 	state: ^state = new(state)
 	defer free(state)
 
-	shader: shader = shader_create(
+	quad_shader: shader = shader_create(
 		"res/shaders/pixel.vs",
 		"res/shaders/pixel.fs",
+	)
+
+	circle_shader: shader = shader_create(
+		"res/shaders/circle.vs",
+		"res/shaders/circle.fs",
 	)
 
 	camera: camera
 	camera_init(
 		&camera,
-		shader,
+		quad_shader,
 		aspect = cast(f32)WINDOW_WIDTH / cast(f32)WINDOW_HEIGHT,
 	)
 	glfw.SetFramebufferSizeCallback(window, resize_callback)
-	renderer: renderer
-	renderer_init(&renderer, shader)
+	quad_renderer: renderer
+	renderer_init(&quad_renderer, quad_shader, render_mode.QUAD)
+	circle_renderer: renderer
+	renderer_init(&circle_renderer, circle_shader, render_mode.CIRCLE)
 
 	glfw.SetWindowUserPointer(window, &camera)
 
@@ -143,7 +150,7 @@ main :: proc() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 
-		render(&renderer, state)
+		render(&quad_renderer, state)
 
 		if frame_count == 60 {
 			fps := cast(f32)frame_count / fps_frame_time
@@ -155,8 +162,10 @@ main :: proc() {
 		glfw.SwapBuffers(window)
 		frame_count += 1
 	}
-	renderer_destroy(&renderer)
-	shader_delete(&shader)
+	renderer_destroy(&quad_renderer)
+	renderer_destroy(&circle_renderer)
+	shader_delete(&quad_shader)
+	shader_delete(&circle_shader)
 	glfw.DestroyWindow(window)
 	glfw.Terminate()
 	log.destroy_console_logger(context.logger)

@@ -1,4 +1,5 @@
 #version 450 core
+
 in vec2 tex_coords;
 out vec4 color;
 uniform vec3 sprite_color;
