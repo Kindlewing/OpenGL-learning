@@ -7,9 +7,8 @@ import gl "vendor:OpenGL"
 
 camera :: struct {
 	zoom:              f32,
-	shader:            shader,
-	projection_matrix: linalg.Matrix4f32,
 	aspect_ratio:      f32,
+	projection_matrix: linalg.Matrix4f32,
 }
 
 camera_init :: proc(cam: ^camera, zoom: f32 = 1.0, aspect: f32) {

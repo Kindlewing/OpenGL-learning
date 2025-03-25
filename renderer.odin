@@ -22,21 +22,21 @@ render_mode :: enum {
 
 renderer_init :: proc(r: ^renderer, cam: ^camera) {
 	// odinfmt: disable
+	r.mode =.CIRCLE
 	r.shaders["QUAD"] = shader_create("res/shaders/quad.vs", "res/shaders/quad.fs")	
 	r.shaders["CIRCLE"] = shader_create("res/shaders/circle.vs", "res/shaders/circle.fs")	
 
-	r.mode =.CIRCLE
-
 	vertices: [24]f32 = {
-		//pos       //tex
-		0.0, 1.0, 0.0, 1.0,
-        1.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 0.0, 
-    
-        0.0, 1.0, 0.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 0.0, 1.0, 0.0,
+		//pos          //tex
+	   -1.0,  1.0, 0.0, 1.0,  // Top-left
+		1.0, -1.0, 1.0, 0.0,  // Bottom-right
+	   -1.0, -1.0, 0.0, 0.0,  // Bottom-left
+
+	   -1.0,  1.0, 0.0, 1.0,  // Top-left (repeated)
+		1.0,  1.0, 1.0, 1.0,  // Top-right
+		1.0, -1.0, 1.0, 0.0,  // Bottom-right (repeated)
 	}
+
 	// odinfmt: enable
 	gl.GenVertexArrays(1, &r.quad_vao)
 
@@ -75,8 +75,15 @@ renderer_init :: proc(r: ^renderer, cam: ^camera) {
 	}
 }
 
+render_prepare :: proc() {
+	gl.Enable(gl.BLEND)
+	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+}
+
 render :: proc(r: ^renderer, state: ^state) {
+	render_prepare()
 	proj_loc, resolution_loc, color_loc, model_loc, texture_loc: i32
+	origin_loc, radius_loc: i32
 	switch r.mode {
 	case .QUAD:
 		sh := r.shaders["QUAD"]
@@ -87,13 +94,17 @@ render :: proc(r: ^renderer, state: ^state) {
 	case .CIRCLE:
 		sh := r.shaders["CIRCLE"]
 		gl.UseProgram(sh.program)
-		resolution_loc = gl.GetUniformLocation(sh.program, "iResolution")
+		resolution_loc = gl.GetUniformLocation(sh.program, "u_resolution")
 		color_loc = gl.GetUniformLocation(sh.program, "sprite_color")
 		texture_loc = gl.GetUniformLocation(sh.program, "pixel_texture")
 		model_loc = gl.GetUniformLocation(sh.program, "model")
-		gl.Uniform3f(resolution_loc, WINDOW_WIDTH, WINDOW_HEIGHT, 0.0)
+		gl.Uniform2f(resolution_loc, WINDOW_WIDTH, WINDOW_HEIGHT)
+
+		radius_loc = gl.GetUniformLocation(sh.program, "radius")
+		gl.Uniform1f(radius_loc, state.px[0].size)
+		origin_loc = gl.GetUniformLocation(sh.program, "origin")
+		gl.Uniform2f(origin_loc, state.px[0].size, state.px[0].size)
 	}
-	gl.ActiveTexture(gl.TEXTURE0)
 	for i := 0; i < MAX_PIXELS; i += 1 {
 		gl.Uniform3f(
 			color_loc,
@@ -103,7 +114,7 @@ render :: proc(r: ^renderer, state: ^state) {
 		)
 		model: linalg.Matrix4f32 = linalg.MATRIX4F32_IDENTITY
 		model *= linalg.matrix4_translate_f32(
-			{state.px[i].x, state.px[i].y, 0.0},
+			{state.px[i].pos.x, state.px[i].pos.y, 0.0},
 		)
 		model *= linalg.matrix4_translate_f32(
 			{0.5 * state.px[i].size, 0.5 * state.px[i].size, 0.0},
@@ -119,7 +130,8 @@ render :: proc(r: ^renderer, state: ^state) {
 			{state.px[i].size, state.px[i].size, 0.0},
 		)
 		if r.mode == .CIRCLE {
-			gl.Uniform3f(resolution_loc, WINDOW_WIDTH, WINDOW_HEIGHT, 0.0)
+			gl.Uniform1f(radius_loc, 0.5 * state.px[i].size)
+			gl.Uniform2f(resolution_loc, WINDOW_WIDTH, WINDOW_HEIGHT)
 		}
 		gl.UniformMatrix4fv(model_loc, 1, false, raw_data(&model))
 		gl.BindTexture(gl.TEXTURE_2D, state.px[i].texture.id)
