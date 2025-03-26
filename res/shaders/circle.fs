@@ -7,6 +7,7 @@ uniform float radius;
 uniform vec2 u_resolution;
 
 void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution;
     float d = length(pos);
     float thickness = 0.5;
     float fade = 0.005;

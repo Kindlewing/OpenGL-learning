@@ -15,7 +15,7 @@ renderer :: struct {
 	mode:     render_mode,
 }
 
-render_mode :: enum {
+render_mode :: enum u8 {
 	QUAD,
 	CIRCLE,
 }

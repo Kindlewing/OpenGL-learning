@@ -20,8 +20,8 @@ GLFW_MINOR_VERSION :: 3
 WINDOW_WIDTH :: 1000
 WINDOW_HEIGHT :: 800
 
-MAX_PIXELS :: 100
-PIXEL_SIZE :: 25
+MAX_PIXELS :: 10
+PIXEL_SIZE :: 100
 
 main :: proc() {
 	when ODIN_DEBUG {
@@ -62,7 +62,7 @@ main :: proc() {
 		glfw.Terminate()
 		return
 	}
-	log.debug("GLFW initialized successfully")
+	when ODIN_DEBUG {log.debug("GLFW initialized successfully")}
 	glfw.WindowHint(glfw.RESIZABLE, true)
 	glfw.WindowHint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 	glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, GLFW_MAJOR_VERSION)
@@ -77,20 +77,20 @@ main :: proc() {
 			gl.DebugMessageCallback(gl_debug_output, &ctx)
 		}
 	}
-	log.debug("About to create the window")
+	when ODIN_DEBUG {log.debug("About to create the window")}
 	window := glfw.CreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Game", nil, nil)
 	if window == nil {
 		log.fatal("Error creating window")
 		glfw.Terminate()
 		return
 	}
-	log.debug("Window created successfully")
+	when ODIN_DEBUG {log.debug("Window created successfully")}
 	glfw.MakeContextCurrent(window)
 
 
-	log.debug("Loading GLAD procs\n")
+	when ODIN_DEBUG {log.debug("Loading GLAD procs\n")}
 	gl.load_up_to(GLFW_MAJOR_VERSION, GLFW_MINOR_VERSION, set_addr_type)
-	log.debug("Set the viewport\n")
+	when ODIN_DEBUG {log.debug("Set the viewport\n")}
 	gl.Viewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
 	state: ^state = new(state)

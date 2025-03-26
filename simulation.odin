@@ -3,7 +3,6 @@ import "core:math/linalg"
 import "core:math/rand"
 import t "core:time"
 
-
 pixel :: struct {
 	pos:     linalg.Vector2f32,
 	radius:  f32,
@@ -21,56 +20,58 @@ state :: struct {
 	gravity: f32,
 }
 
-state_init :: proc(state: ^state) {
+state_init :: proc(st: ^state) {
 	sand: texture = texture_create("res/textures/sand.png")
-	state.bounds = {WINDOW_WIDTH, WINDOW_HEIGHT}
+	st.bounds = {WINDOW_WIDTH, WINDOW_HEIGHT}
+	st.gravity = -9.81
 	for i := 0; i < MAX_PIXELS; i += 1 {
 		pixel: pixel
 		pixel.size = PIXEL_SIZE
 		pixel.radius = pixel.size / 2
-		pixel.mass = 10
+		pixel.mass = 20
 
-		pixel.accel = {0.0, -5.0}
+		pixel.accel = {0.0, 0.0}
 		pixel.pos = {
 			rand.float32_range(
-				-state.bounds.x + pixel.radius,
-				state.bounds.x - pixel.radius,
+				-st.bounds.x + pixel.radius,
+				st.bounds.x - pixel.radius,
 			),
 			rand.float32_range(
-				-state.bounds.y + pixel.radius,
-				state.bounds.y - pixel.radius,
+				-st.bounds.y + pixel.radius,
+				st.bounds.y - pixel.radius,
 			),
 		}
-		pixel.color = {1.0, 1.0, 1.0}
-		pixel.vel = {
-			rand.float32_range(-0.5, 0.5),
-			rand.float32_range(-0.5, 0.5),
-		}
+		pixel.color = {0.8, 0.3, 0.2}
+		pixel.vel = {rand.float32_range(-10, 10), rand.float32_range(-10, 10)}
 		pixel.texture = sand
-		state.px[i] = pixel
+		st.px[i] = pixel
 	}
 }
 
-simulation_update :: proc(delta_time: f32, state: ^state) {
-	speed: f32 = 600.0
-	radius: f32 = state.px[0].radius
-	for i := 0; i < MAX_PIXELS; i += 1 {
-		// movement
-		state.px[i].pos += state.px[i].vel * speed * delta_time
+verlet :: proc(pos: ^linalg.Vector2f32, accel: ^linalg.Vector2f32, dt: f32) {
 
+}
+
+simulation_update :: proc(delta_time: f32, st: ^state) {
+	speed: f32 = 50.0
+	radius: f32 = st.px[0].radius
+	for i := 0; i < MAX_PIXELS; i += 1 {
+		px: ^pixel = &st.px[i]
+		// movement
+		verlet(&px.pos, &px.accel, delta_time)
 
 		// collision with border
-		if state.px[i].pos.x - radius < -state.bounds.x {
-			state.px[i].vel.x *= -1
+		if st.px[i].pos.x - radius < -st.bounds.x {
+			st.px[i].vel.x *= -1
 		}
-		if state.px[i].pos.x + radius > state.bounds.x {
-			state.px[i].vel.x *= -1
+		if st.px[i].pos.x + radius > st.bounds.x {
+			st.px[i].vel.x *= -1
 		}
-		if state.px[i].pos.y - radius < -state.bounds.y {
-			state.px[i].vel.y *= -1
+		if st.px[i].pos.y - radius < -st.bounds.y {
+			st.px[i].vel.y *= -1
 		}
-		if state.px[i].pos.y + radius > state.bounds.y {
-			state.px[i].vel.y *= -1
+		if st.px[i].pos.y + radius > st.bounds.y {
+			st.px[i].vel.y *= -1
 		}
 
 		// collision of two pixels
@@ -78,37 +79,38 @@ simulation_update :: proc(delta_time: f32, state: ^state) {
 			if i == j {
 				continue
 			}
-			p1, p2: ^pixel = &state.px[i], &state.px[j]
-			if linalg.distance(p1.pos, p2.pos) <= p1.radius + p2.radius {
-				normal: linalg.Vector2f32 = p2.pos - p1.pos
+			px_2: ^pixel = &st.px[j]
+			if linalg.distance(px.pos, px_2.pos) <= px.radius + px_2.radius {
+				normal: linalg.Vector2f32 = px_2.pos - px.pos
 				u_normal: linalg.Vector2f32 = normal / linalg.length(normal)
 				u_tan: linalg.Vector2f32 = {-u_normal.y, u_normal.x}
-				v1_normal: f32 = linalg.vector_dot(u_normal, p1.vel)
-				v1_tan: f32 = linalg.vector_dot(u_tan, p1.vel)
-				v2_normal: f32 = linalg.vector_dot(u_normal, p2.vel)
-				v2_tan: f32 = linalg.vector_dot(u_tan, p2.vel)
+				v1_normal: f32 = linalg.vector_dot(u_normal, px.vel)
+				v1_tan: f32 = linalg.vector_dot(u_tan, px.vel)
+				v2_normal: f32 = linalg.vector_dot(u_normal, px_2.vel)
+				v2_tan: f32 = linalg.vector_dot(u_tan, px_2.vel)
 
 				new_normal_v1 :=
-					(v1_normal * (p1.mass - p2.mass) +
-						2 * p2.mass * v2_normal) /
-					(p1.mass + p2.mass)
+					(v1_normal * (px.mass - px_2.mass) +
+						2 * px_2.mass * v2_normal) /
+					(px.mass + px_2.mass)
 				new_normal_v2 :=
-					(v2_normal * (p2.mass - p1.mass) +
-						2 * p1.mass * v1_normal) /
-					(p1.mass + p2.mass)
+					(v2_normal * (px_2.mass - px.mass) +
+						2 * px.mass * v1_normal) /
+					(px.mass + px_2.mass)
 
 				vec1_normal_new: linalg.Vector2f32 = new_normal_v1 * u_normal
 				vec2_normal_new: linalg.Vector2f32 = new_normal_v2 * u_normal
 				vec1_tan_new: linalg.Vector2f32 = v1_tan * u_tan
 				vec2_tan_new: linalg.Vector2f32 = v2_tan * u_tan
-				p1.vel = vec1_normal_new + vec1_tan_new
-				p2.vel = vec2_normal_new + vec2_tan_new
+				px.vel = vec1_normal_new + vec1_tan_new
+				px_2.vel = vec2_normal_new + vec2_tan_new
 
 				overlap: f32 =
-					(p1.radius + p2.radius) - linalg.distance(p1.pos, p2.pos)
+					(px.radius + px_2.radius) -
+					linalg.distance(px.pos, px_2.pos)
 				correction: linalg.Vector2f32 = (overlap / 2) * u_normal
-				p1.pos -= correction
-				p2.pos += correction
+				px.pos -= correction
+				px_2.pos += correction
 			}
 		}
 	}

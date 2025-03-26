@@ -43,7 +43,7 @@ shader_compile :: proc(file: string, type: u32) -> u32 {
 	defer delete_slice(shader_src)
 	handle = gl.CreateShader(type)
 	gl.ShaderSource(handle, 1, cast(^cstring)&shader_src, nil)
-	log.debugf("About to compile shader: %s\n", file)
+	when ODIN_DEBUG {log.debugf("About to compile shader: %s\n", file)}
 	gl.CompileShader(handle)
 	ok: i32
 	info: [512]u8
@@ -53,7 +53,7 @@ shader_compile :: proc(file: string, type: u32) -> u32 {
 		log.errorf("Shader %s compilation failed:\n reason: %s\n", file, info)
 		os.exit(-1)
 	}
-	log.debugf("Shader %s compilation successful\n", file)
+	when ODIN_DEBUG {log.debugf("Shader %s compilation successful\n", file)}
 	return handle
 }
 
