@@ -1,17 +1,19 @@
 package main
+import "core:fmt"
 import "core:math/linalg"
 import "core:math/rand"
 import t "core:time"
 
 pixel :: struct {
-	pos:     linalg.Vector2f32,
-	radius:  f32,
-	size:    f32,
-	vel:     linalg.Vector2f32,
-	accel:   linalg.Vector2f32,
-	mass:    f32,
-	color:   linalg.Vector3f32,
-	texture: texture,
+	pos:      linalg.Vector2f32,
+	prev_pos: linalg.Vector2f32,
+	radius:   f32,
+	size:     f32,
+	vel:      linalg.Vector2f32,
+	accel:    linalg.Vector2f32,
+	mass:     f32,
+	color:    linalg.Vector3f32,
+	texture:  texture,
 }
 
 state :: struct {
@@ -30,7 +32,7 @@ state_init :: proc(st: ^state) {
 		pixel.radius = pixel.size / 2
 		pixel.mass = 20
 
-		pixel.accel = {0.0, 0.0}
+		pixel.accel = {0.0, st.gravity}
 		pixel.pos = {
 			rand.float32_range(
 				-st.bounds.x + pixel.radius,
@@ -41,6 +43,7 @@ state_init :: proc(st: ^state) {
 				st.bounds.y - pixel.radius,
 			),
 		}
+		pixel.prev_pos = pixel.pos
 		pixel.color = {0.8, 0.3, 0.2}
 		pixel.vel = {rand.float32_range(-10, 10), rand.float32_range(-10, 10)}
 		pixel.texture = sand
@@ -48,30 +51,38 @@ state_init :: proc(st: ^state) {
 	}
 }
 
-verlet :: proc(pos: ^linalg.Vector2f32, accel: ^linalg.Vector2f32, dt: f32) {
 
+verlet :: proc(
+	pos: ^linalg.Vector2f32,
+	prev_pos: ^linalg.Vector2f32,
+	accel: ^linalg.Vector2f32,
+	dt: f32,
+) {
+	new_pos: linalg.Vector2f32 = 2 * pos^ - prev_pos^ + accel^ * (dt * dt)
+	prev_pos^ = pos^
+	pos^ = new_pos
 }
 
 simulation_update :: proc(delta_time: f32, st: ^state) {
-	speed: f32 = 50.0
+	speed: f32 = 5.0
 	radius: f32 = st.px[0].radius
 	for i := 0; i < MAX_PIXELS; i += 1 {
 		px: ^pixel = &st.px[i]
 		// movement
-		verlet(&px.pos, &px.accel, delta_time)
+		px.pos += speed * px.vel * px.accel * delta_time
 
 		// collision with border
-		if st.px[i].pos.x - radius < -st.bounds.x {
-			st.px[i].vel.x *= -1
+		if px.pos.x - radius < -st.bounds.x {
+			px.vel.x *= -1
 		}
-		if st.px[i].pos.x + radius > st.bounds.x {
-			st.px[i].vel.x *= -1
+		if px.pos.x + radius > st.bounds.x {
+			px.vel.x *= -1
 		}
-		if st.px[i].pos.y - radius < -st.bounds.y {
-			st.px[i].vel.y *= -1
+		if px.pos.y - radius < -st.bounds.y {
+			px.vel.y *= -1
 		}
-		if st.px[i].pos.y + radius > st.bounds.y {
-			st.px[i].vel.y *= -1
+		if px.pos.y + radius > st.bounds.y {
+			px.vel.y *= -1
 		}
 
 		// collision of two pixels
